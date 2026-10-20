@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delco 10DN Alternator — 3D Assembly Trainer v3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@300;400;600;700&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#0d1117; --panel:#161b22; --border:#30363d; --accent:#f0a500;
+    --text:#e6edf3; --muted:#8b949e; --highlight:#58a6ff; --green:#3fb950; --danger:#f85149;
+  }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; font-size:14px;
+    height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  header { background:var(--panel); border-bottom:1px solid var(--border); padding:10px 16px;
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0; z-index:10; flex-wrap:wrap; gap:8px; }
+  .header-title { display:flex; align-items:center; gap:12px; }
+  .badge { background:var(--accent); color:#000; font-family:'Share Tech Mono',monospace; font-size:11px;
+    font-weight:700; padding:3px 8px; border-radius:3px; letter-spacing:.05em; }
+  header h1 { font-size:15px; font-weight:600; }
+  header p { font-size:11px; color:var(--muted); }
+  .header-controls { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .main { flex:1; display:flex; overflow:hidden; }
+  .sidebar { width:220px; background:var(--panel); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+  .sidebar-header, .info-header { padding:10px 14px; font-size:10px; font-weight:700; letter-spacing:.12em;
+    color:var(--muted); border-bottom:1px solid var(--border); text-transform:uppercase; }
+  .parts-list { flex:1; overflow-y:auto; padding:6px 0; }
+  .parts-list::-webkit-scrollbar { width:4px; }
+  .parts-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .part-group-label { padding:8px 14px 4px; font-size:9px; font-weight:700; letter-spacing:.1em;
+    color:var(--accent); text-transform:uppercase; }
+  .part-item { display:flex; align-items:center; gap:8px; padding:5px 14px; cursor:pointer;
+    transition:background .15s; border-left:2px solid transparent; }
+  .part-item:hover { background:rgba(255,255,255,.04); }
+  .part-item.active { background:rgba(240,165,0,.08); border-left-color:var(--accent); }
+  .part-item.hidden-part { opacity:.35; }
+  .part-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .part-name { font-size:12px; line-height:1.3; flex:1; }
+  .part-vis { font-size:10px; color:var(--muted); cursor:pointer; padding:2px 4px; border-radius:3px; }
+  .part-vis:hover { color:var(--text); }
+  .viewport { flex:1; position:relative; overflow:hidden; }
+  #canvas3d { width:100%; height:100%; display:block; }
+  .viewport-overlay { position:absolute; top:12px; left:12px; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
+  .view-hint { background:rgba(13,17,23,.75); border:1px solid var(--border); border-radius:4px;
+    padding:5px 10px; font-size:11px; color:var(--muted); }
+  .info-panel { width:250px; background:var(--panel); border-left:1px solid var(--border);
+    display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; }
+  .part-detail { padding:16px 14px; flex:1; overflow-y:auto; }
+  .part-detail h2 { font-size:16px; font-weight:700; margin-bottom:4px; color:var(--accent); }
+  .part-detail .part-id { font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--muted); margin-bottom:12px; }
+  .detail-section { margin-bottom:14px; }
+  .detail-label { font-size:9px; font-weight:700; letter-spacing:.1em; color:var(--muted);
+    text-transform:uppercase; margin-bottom:5px; }
+  .detail-text { font-size:12px; line-height:1.6; }
+  .spec-table { width:100%; border-collapse:collapse; }
+  .spec-table td { padding:3px 0; font-size:11px; vertical-align:top; }
+  .spec-table td:first-child { color:var(--muted); width:45%; padding-right:8px; }
+  .spec-table td:last-child { font-family:'Share Tech Mono',monospace; }
+  .no-selection { padding:40px 14px; text-align:center; color:var(--muted); font-size:12px; line-height:1.7; }
+  .no-selection .icon { font-size:36px; margin-bottom:12px; opacity:.4; }
+  .step-panel { background:var(--panel); border-top:1px solid var(--border); padding:10px 16px;
+    display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .step-label { font-size:10px; font-weight:700; letter-spacing:.1em; color:var(--muted);
+    text-transform:uppercase; white-space:nowrap; }
+  .step-steps { display:flex; gap:4px; flex:1; overflow-x:auto; padding-bottom:2px; }
+  .step-steps::-webkit-scrollbar { height:3px; }
+  .step-steps::-webkit-scrollbar-thumb { background:var(--border); }
+  .step-dot { width:28px; height:28px; border-radius:50%; border:2px solid var(--border); background:var(--bg);
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; cursor:pointer;
+    flex-shrink:0; transition:all .2s; color:var(--muted); font-family:'Share Tech Mono',monospace; }
+  .step-dot:hover { border-color:var(--accent); color:var(--accent); }
+  .step-dot.done { background:var(--green); border-color:var(--green); color:#000; }
+  .step-dot.current { background:var(--accent); border-color:var(--accent); color:#000; }
+  .step-desc { font-size:12px; min-width:180px; max-width:240px; line-height:1.4; }
+  .btn { padding:6px 12px; border:1px solid var(--border); background:transparent; color:var(--text);
+    font-size:12px; font-family:'Inter',sans-serif; border-radius:5px; cursor:pointer; transition:all .2s;
+    white-space:nowrap; display:flex; align-items:center; gap:5px; }
+  .btn:hover { border-color:var(--accent); color:var(--accent); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#000; font-weight:600; }
+  .btn.primary:hover { background:#e09500; }
+  .btn.danger { border-color:var(--danger); color:var(--danger); }
+  .btn.active-btn { background:rgba(88,166,255,.1); border-color:var(--highlight); color:var(--highlight); }
+  .slider-wrap { display:flex; align-items:center; gap:8px; padding:0 4px; }
+  .slider-wrap label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  input[type=range] { width:130px; accent-color:var(--accent); }
+  #loading { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; z-index:999; gap:16px; }
+  .loading-title { font-size:22px; font-weight:700; color:var(--accent); font-family:'Share Tech Mono',monospace; }
+  .loading-bar { width:220px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .loading-bar-fill { height:100%; background:linear-gradient(90deg,#f0a500,#e05c00); border-radius:2px;
+    animation:loadfill 1.1s ease-out forwards; }
+  @keyframes loadfill { from{width:0} to{width:100%} }
+  .loading-sub { font-size:12px; color:var(--muted); }
+  #tooltip { position:fixed; background:var(--panel); border:1px solid var(--accent); border-radius:5px;
+    padding:6px 10px; font-size:12px; pointer-events:none; display:none; z-index:100; color:var(--accent);
+    font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,.5); }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="loading-title">DELCO 10DN · v3</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+  <div class="loading-sub">Building coaxial assembly…</div>
+</div>
+
+<div id="tooltip"></div>
+
+<header>
+  <div class="header-title">
+    <span class="badge">10DN</span>
+    <div>
+      <h1>Delco 10DN Series Alternator</h1>
+      <p>Interactive 3D Assembly &amp; Disassembly — v3 — shapes matched to the parts diagram</p>
+    </div>
+  </div>
+  <div class="header-controls">
+    <div class="slider-wrap">
+      <label>Explode</label>
+      <input type="range" id="explodeSlider" min="0" max="100" value="0">
+    </div>
+    <button class="btn" id="btnExplode">⬡ Explode</button>
+    <button class="btn" id="btnAssemble">⬢ Assemble</button>
+    <button class="btn" id="btnStepMode">▶ Step Mode</button>
+    <button class="btn" id="btnAutoRotate">↻ Rotate</button>
+    <button class="btn" id="btnReset">⟳ Reset</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-header">Components</div>
+    <div class="parts-list" id="partsList"></div>
+  </div>
+  <div class="viewport">
+    <canvas id="canvas3d"></canvas>
+    <div class="viewport-overlay">
+      <div class="view-hint">🖱 Drag orbit · Scroll zoom · Right-drag pan</div>
+      <div class="view-hint" id="stepHint" style="display:none;color:var(--accent)">Step Mode: ← → keys to navigate</div>
+    </div>
+  </div>
+  <div class="info-panel">
+    <div class="info-header">Part Details</div>
+    <div class="part-detail" id="partDetail">
+      <div class="no-selection"><div class="icon">⚙</div>
+        Click any component in the 3D view or parts list for details.</div>
+    </div>
+  </div>
+</div>
+
+<div class="step-panel" id="stepPanel" style="display:none">
+  <span class="step-label">Disassembly</span>
+  <div class="step-steps" id="stepDots"></div>
+  <div class="step-desc" id="stepDesc">—</div>
+  <button class="btn" id="btnPrevStep">◀ Prev</button>
+  <button class="btn primary" id="btnNextStep">Next ▶</button>
+  <button class="btn danger" id="btnExitStep">✕ Exit</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════
+//  MATERIALS
+// ════════════════════════════════════════════════════════
+const M = {
+  alumLight: () => new THREE.MeshStandardMaterial({ color:0xb9bec4, metalness:0.55, roughness:0.42 }),
+  alumCast:  () => new THREE.MeshStandardMaterial({ color:0x9aa1a8, metalness:0.5,  roughness:0.55 }),
+  steel:     () => new THREE.MeshStandardMaterial({ color:0xcfd2d6, metalness:0.75, roughness:0.25 }),
+  steelDark: () => new THREE.MeshStandardMaterial({ color:0x6b6f74, metalness:0.7,  roughness:0.4  }),
+  zinc:      () => new THREE.MeshStandardMaterial({ color:0xa9adb3, metalness:0.65, roughness:0.35 }),
+  copper:    () => new THREE.MeshStandardMaterial({ color:0xb87333, metalness:0.7,  roughness:0.38 }),
+  copperBright:()=> new THREE.MeshStandardMaterial({ color:0xd98e45, metalness:0.8, roughness:0.28 }),
+  ironDark:  () => new THREE.MeshStandardMaterial({ color:0x4d5156, metalness:0.6,  roughness:0.5  }),
+  plasticBlk:() => new THREE.MeshStandardMaterial({ color:0x202126, metalness:0.05, roughness:0.8  }),
+  plasticRed:() => new THREE.MeshStandardMaterial({ color:0x8e2418, metalness:0.05, roughness:0.7  }),
+  insulOrange:()=> new THREE.MeshStandardMaterial({ color:0xc05a16, metalness:0.1,  roughness:0.7  }),
+  diodeBody: () => new THREE.MeshStandardMaterial({ color:0x303338, metalness:0.4,  roughness:0.5  }),
+};
+
+// ════════════════════════════════════════════════════════
+//  GEOMETRY HELPERS
+//  Every part is modelled in assembled (world) position.
+//  Axis = Z, front (pulley) = +Z.  Angles measured from +Y, clockwise
+//  when looking from the rear.  1 unit ≈ 40 mm (stator OD ≈ 130 mm).
+// ════════════════════════════════════════════════════════
+const TAU = Math.PI*2, DEG = Math.PI/180;
+const polar = (r,a) => [r*Math.sin(a), r*Math.cos(a)];
+
+function lathe(profile, mat, segs=56) {
+  const g = new THREE.LatheGeometry(profile.map(p => new THREE.Vector2(p[0], p[1])), segs);
+  const mesh = new THREE.Mesh(g, mat);
+  mesh.rotation.x = Math.PI/2;              // lathe axis Y → world Z
+  mesh.material.side = THREE.DoubleSide;
+  return mesh;
+}
+function cylZ(rTop, rBot, len, mat, segs=32) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, len, segs), mat);
+  m.rotation.x = Math.PI/2;
+  return m;
+}
+function torusZ(r, tube, mat, segs=32, arc=TAU) {
+  return new THREE.Mesh(new THREE.TorusGeometry(r, tube, 12, segs, arc), mat);
+}
+function at(obj, x, y, z) { obj.position.set(x, y, z); return obj; }
+function atZ(obj, z) { obj.position.z = z; return obj; }
+// rotate a sub-assembly built at local (0, r) to polar angle a
+function pivot(a, ...objs) { const p = new THREE.Group(); objs.forEach(o=>p.add(o)); p.rotation.z = -a; return p; }
+function hexNut(r, mat, len) {
+  const g = new THREE.Group();
+  const body = cylZ(r, r, len || r*0.85, mat, 6); body.rotation.y = Math.PI/6; g.add(body);
+  g.add(cylZ(r*0.45, r*0.45, (len || r*0.85)*1.04, M.ironDark(), 12));
+  return g;
+}
+function ringZ(rIn, rOut, z0, z1, mat, segs=40) {
+  return lathe([[rIn,z0],[rOut,z0],[rOut,z1],[rIn,z1],[rIn,z0]], mat, segs);
+}
+function extrudeZ(shape, z0, depth, mat, curveSegments=48) {
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled:false, curveSegments });
+  const m = new THREE.Mesh(g, mat);
+  m.position.z = z0;
+  return m;
+}
+function circlePath(x, y, r) { const p = new THREE.Path(); p.absarc(x, y, r, 0, TAU, true); return p; }
+function tube(points, r, mat, segs=24) {
+  const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)));
+  return new THREE.Mesh(new THREE.TubeGeometry(curve, segs, r, 8, false), mat);
+}
+// Window cut in an end frame: annular sector between two spokes, optionally swept (twist)
+function windowPath(r0, r1, aC, halfA, spokeW, twist, n=10) {
+  const edge = (r, s) => aC + s*(halfA - spokeW/(2*r)) + twist*(r - r0);
+  const pts = [];
+  for (let i=0;i<=n;i++){ const t=i/n; pts.push(polar(r0, edge(r0,-1)+(edge(r0,1)-edge(r0,-1))*t)); }
+  for (let i=1;i<=n;i++){ const r=r0+(r1-r0)*i/n; pts.push(polar(r, edge(r,1))); }
+  for (let i=1;i<=n;i++){ const t=i/n; pts.push(polar(r1, edge(r1,1)+(edge(r1,-1)-edge(r1,1))*t)); }
+  for (let i=n-1;i>=1;i--){ const r=r0+(r1-r0)*i/n; pts.push(polar(r, edge(r,-1))); }
+  const p = new THREE.Path(); p.moveTo(...pts[0]); pts.slice(1).forEach(q => p.lineTo(...q)); p.closePath();
+  return p;
+}
+function frameFace(rOut, rHole, nWin, w0, w1, spokeW, twist) {
+  const s = new THREE.Shape(); s.absarc(0, 0, rOut, 0, TAU, false);
+  s.holes.push(circlePath(0, 0, rHole));
+  for (let i=0;i<nWin;i++) s.holes.push(windowPath(w0, w1, (i+0.5)*TAU/nWin, Math.PI/nWin, spokeW, twist));
+  return s;
+}
+// Claw-pole finger: curved, tapered solid lying on a cylinder
+function clawGeometry(rOut, rIn0, rIn1, z0, z1, hw0, hw1, nU=10, nV=8) {
+  const pos = [];
+  const P = (outer, i, j) => {
+    const v=j/nV, hw=hw0+(hw1-hw0)*v, a=-hw+2*hw*i/nU, z=z0+(z1-z0)*v;
+    const r = outer ? rOut - 0.02*v : rIn0+(rIn1-rIn0)*v;
+    return [r*Math.sin(a), r*Math.cos(a), z];
+  };
+  const quad = (a,b,c,d) => pos.push(...a,...b,...c, ...a,...c,...d);
+  for (let i=0;i<nU;i++) for (let j=0;j<nV;j++) {
+    quad(P(1,i,j),P(1,i+1,j),P(1,i+1,j+1),P(1,i,j+1));
+    quad(P(0,i,j+1),P(0,i+1,j+1),P(0,i+1,j),P(0,i,j));
+  }
+  for (let j=0;j<nV;j++) {
+    quad(P(0,0,j),P(1,0,j),P(1,0,j+1),P(0,0,j+1));
+    quad(P(1,nU,j),P(0,nU,j),P(0,nU,j+1),P(1,nU,j+1));
+  }
+  for (let i=0;i<nU;i++) {
+    quad(P(0,i,0),P(0,i+1,0),P(1,i+1,0),P(1,i,0));
+    quad(P(1,i,nV),P(1,i+1,nV),P(0,i+1,nV),P(0,i,nV));
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
+}
+function laminationTexture() {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 256;
+  const x = c.getContext('2d');
+  for (let i=0;i<64;i++){ x.fillStyle = i%2 ? '#6d737b' : '#4b5057'; x.fillRect(0, i*4, 4, 4); }
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  return t;
+}
+
+// ════════════════════════════════════════════════════════
+//  KEY DIMENSIONS (Z positions)
+// ════════════════════════════════════════════════════════
+const Z = {
+  statorF: 0.34, statorR: -0.34,
+  deFace: 0.70, deHubF: 0.96, brgDE: 0.80,
+  fanDisc: 1.14, pulley0: 1.18, pulley1: 1.60,
+  sreFaceIn: -0.95, sreFaceOut: -1.07, sreHubR: -1.40,
+  shaftF: 1.86, shaftR: -1.34,
+};
+const BOLT_ANGLES = [45*DEG, 165*DEG, 285*DEG];
+const BOLT_R = 1.76;
+
+// ════════════════════════════════════════════════════════
+//  PART BUILDERS — shapes follow the Delco 10DN parts diagram
+// ════════════════════════════════════════════════════════
+function buildHexNutFront() { return atZ(hexNut(0.16, M.zinc(), 0.14), 1.73); }
+function buildLockWasher() {
+  const w = torusZ(0.145, 0.03, M.zinc(), 32, TAU - 0.35);
+  w.scale.z = 0.8;
+  return atZ(w, 1.635);
+}
+function buildPulley() {
+  // single V-groove sheave with a hub, as drawn
+  const z = Z.pulley0;
+  return lathe([
+    [0.10, z],[0.34, z],[0.40, z+0.04],[0.72, z+0.06],[0.72, z+0.10],
+    [0.49, z+0.19],[0.49, z+0.23],
+    [0.72, z+0.32],[0.72, z+0.36],[0.40, z+0.38],[0.30, z+0.42],[0.10, z+0.42],[0.10, z]
+  ], M.steelDark(), 64);
+}
+function buildFan() {
+  // stamped disc with a jagged star outline; each tooth has a blade bent 90° rearward
+  const g = new THREE.Group();
+  const N = 10, tooth = 0.34;         // tooth angular width (rad)
+  const s = new THREE.Shape();
+  for (let k=0;k<N;k++) {
+    const a = k*TAU/N;
+    const pts = [[0.80,a],[1.30,a+0.02],[1.30,a+tooth],[0.80,a+tooth+0.08]];
+    pts.forEach(([r,t], i) => {
+      const x = r*Math.cos(t), y = r*Math.sin(t);
+      (k===0 && i===0) ? s.moveTo(x,y) : s.lineTo(x,y);
+    });
+  }
+  s.closePath();
+  s.holes.push(circlePath(0,0,0.10));
+  for (let k=0;k<N;k++) {                       // small lightening holes, as stamped
+    const a = (k+0.6)*TAU/N;
+    s.holes.push(circlePath(0.55*Math.cos(a), 0.55*Math.sin(a), 0.06));
+  }
+  g.add(extrudeZ(s, Z.fanDisc, 0.035, M.zinc()));
+  for (let k=0;k<N;k++) {
+    const b = new THREE.Shape();
+    b.moveTo(0.62, 0); b.lineTo(1.30, 0); b.lineTo(1.30, 0.19); b.lineTo(1.12, 0.21); b.lineTo(0.62, 0.07); b.closePath();
+    const blade = new THREE.Mesh(new THREE.ExtrudeGeometry(b, { depth:0.025, bevelEnabled:false }), M.zinc());
+    blade.rotation.x = -Math.PI/2;              // shape Y → world −Z (bent rearward)
+    const p = new THREE.Group(); p.add(blade);
+    p.rotation.z = k*TAU/N;
+    p.position.z = Z.fanDisc;
+    g.add(p);
+  }
+  g.add(ringZ(0.10, 0.22, Z.fanDisc-0.02, Z.fanDisc+0.04, M.zinc()));
+  return g;
+}
+function buildSpacer(r, z0, z1) { return ringZ(0.10, r, z0, z1, M.steel(), 36); }
+
+function addBoltEars(g, zMid, len) {
+  BOLT_ANGLES.forEach(a => {
+    const [x,y] = polar(BOLT_R, a);
+    g.add(at(cylZ(0.13, 0.13, len, M.alumCast(), 20), x, y, zMid));
+    g.add(at(cylZ(0.05, 0.05, len+0.01, M.ironDark(), 12), x, y, zMid));
+    const web = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, len), M.alumCast());
+    web.position.set(...polar(1.62, a), zMid); web.rotation.z = -a;
+    g.add(web);
+  });
+}
+function addMountLug(g, a, rC, rad, zMid, len) {
+  const [x,y] = polar(rC, a);
+  g.add(at(cylZ(rad, rad, len, M.alumCast(), 28), x, y, zMid));
+  g.add(at(cylZ(rad*0.45, rad*0.45, len+0.01, M.ironDark(), 16), x, y, zMid));
+  const web = new THREE.Mesh(new THREE.BoxGeometry(rad*1.3, rC-1.5, len*0.8), M.alumCast());
+  web.position.set(...polar((rC+1.5)/2, a), zMid); web.rotation.z = -a;
+  g.add(web);
+}
+function buildDEFrame() {
+  const g = new THREE.Group();
+  // skirt + rounded shoulder
+  g.add(lathe([
+    [1.50,0.34],[1.62,0.34],[1.62,0.56],[1.57,0.66],[1.46,0.76],[1.38,0.80],
+    [1.38,0.70],[1.44,0.66],[1.50,0.58],[1.50,0.34]
+  ], M.alumCast(), 72));
+  // front face with five swept windows between curved spokes
+  g.add(extrudeZ(frameFace(1.42, 0.56, 5, 0.72, 1.34, 0.24, 0.55), Z.deFace, 0.10, M.alumCast(), 72));
+  // bearing hub with rear flange for the retainer screws
+  g.add(lathe([[0.40,0.56],[0.68,0.56],[0.68,0.62],[0.56,0.68],[0.56,0.92],[0.52,0.96],[0.40,0.96],[0.40,0.56]], M.alumCast()));
+  addBoltEars(g, 0.47, 0.26);
+  addMountLug(g, 0,        1.88, 0.16, 0.52, 0.32);   // adjusting ear (top)
+  addMountLug(g, Math.PI,  1.94, 0.20, 0.54, 0.40);   // pivot foot (bottom)
+  return g;
+}
+function buildSREFrame() {
+  const g = new THREE.Group();
+  g.add(lathe([
+    [1.50,-0.34],[1.62,-0.34],[1.62,-0.82],[1.56,-0.93],[1.46,-1.02],[1.38,-1.07],
+    [1.38,-0.95],[1.44,-0.90],[1.50,-0.80],[1.50,-0.34]
+  ], M.alumCast(), 72));
+  // rear face: six straight-spoked vent windows
+  g.add(extrudeZ(frameFace(1.42, 0.36, 6, 0.56, 1.28, 0.24, 0), Z.sreFaceOut, 0.12, M.alumCast(), 72));
+  // needle-bearing hub, extends out the back
+  g.add(lathe([[0.22,-0.95],[0.36,-0.95],[0.36,-1.34],[0.30,-1.40],[0.22,-1.40],[0.22,-0.95]], M.alumCast()));
+  // cast ribs on the outside of the rear face
+  for (let i=0;i<6;i++) {
+    const rib = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.0, 0.06), M.alumCast());
+    rib.position.set(...polar(0.88, i*TAU/6), -1.10); rib.rotation.z = -i*TAU/6;
+    g.add(rib);
+  }
+  addBoltEars(g, -0.47, 0.26);
+  addMountLug(g, Math.PI, 1.94, 0.20, -0.54, 0.40);
+  return g;
+}
+function buildBearing() {
+  const g = new THREE.Group(), z = Z.brgDE;
+  g.add(ringZ(0.31, 0.40, z-0.10, z+0.10, M.steel()));
+  g.add(ringZ(0.10, 0.19, z-0.10, z+0.10, M.steel()));
+  g.add(ringZ(0.19, 0.31, z-0.085, z+0.085, M.ironDark()));   // shields
+  return g;
+}
+function buildRetainer() {
+  // rounded-triangle plate with three screw lobes
+  const g = new THREE.Group();
+  const s = new THREE.Shape();
+  for (let i=0;i<=120;i++) {
+    const t = i/120*TAU, r = 0.52 + 0.12*Math.cos(3*t);
+    i ? s.lineTo(r*Math.sin(t), r*Math.cos(t)) : s.moveTo(r*Math.sin(t), r*Math.cos(t));
+  }
+  s.holes.push(circlePath(0,0,0.20));
+  for (let k=0;k<3;k++) { const [x,y] = polar(0.55, k*TAU/3); s.holes.push(circlePath(x,y,0.04)); }
+  g.add(extrudeZ(s, 0.51, 0.04, M.steelDark()));
+  for (let k=0;k<3;k++) {                                 // screws
+    const [x,y] = polar(0.55, k*TAU/3);
+    g.add(at(cylZ(0.065, 0.065, 0.035, M.zinc(), 20), x, y, 0.49));
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.018, 0.01), M.ironDark());
+    g.add(at(slot, x, y, 0.472));
+  }
+  return g;
+}
+function buildRotor() {
+  const g = new THREE.Group();
+  const steelR = new THREE.MeshStandardMaterial({ color:0x8c9197, metalness:0.7, roughness:0.38, side:THREE.DoubleSide });
+  // shaft with threaded nose
+  const len = Z.shaftF - Z.shaftR;
+  g.add(atZ(cylZ(0.10, 0.10, len, M.steel()), (Z.shaftF + Z.shaftR)/2));
+  for (let i=0;i<10;i++) g.add(atZ(torusZ(0.097, 0.011, M.steelDark(), 20), 1.47 + i*0.04));
+  // field coil (mostly hidden between the claws)
+  g.add(atZ(cylZ(0.86, 0.86, 0.50, M.copper()), 0));
+  // pole plates
+  // star-shaped pole plates: finger roots fan out from the hub, then bend over the coil
+  const poleShape = (off) => {
+    const s = new THREE.Shape(); let first = true;
+    const put = (r,a) => { const [x,y] = polar(r,a); first ? s.moveTo(x,y) : s.lineTo(x,y); first = false; };
+    for (let k=0;k<6;k++) {
+      const c = off + k*TAU/6;
+      put(0.74, c-0.44);
+      for (let i=0;i<=6;i++) put(1.07, c-0.31+0.62*i/6);
+      put(0.74, c+0.44);
+      for (let i=1;i<6;i++) put(0.72, c+0.44+(TAU/6-0.88)*i/6);
+    }
+    s.closePath(); s.holes.push(circlePath(0,0,0.10));
+    return s;
+  };
+  g.add(extrudeZ(poleShape(0), 0.29, 0.14, steelR));
+  g.add(extrudeZ(poleShape(TAU/12), -0.43, 0.14, steelR));
+  g.add(atZ(cylZ(0.72, 0.72, 0.58, steelR, 48), 0));           // pole core behind the coil
+  // 6 + 6 interleaved tapered claws
+  const frontClaw = clawGeometry(1.07, 0.90, 1.00, 0.43, -0.39, 0.31, 0.09);
+  const rearClaw  = clawGeometry(1.07, 0.90, 1.00, -0.43, 0.39, 0.31, 0.09);
+  for (let i=0;i<6;i++) {
+    const f = new THREE.Mesh(frontClaw, steelR); f.rotation.z = -i*TAU/6; g.add(f);
+    const r = new THREE.Mesh(rearClaw, steelR);  r.rotation.z = -(i+0.5)*TAU/6; g.add(r);
+  }
+  return g;
+}
+function buildStator() {
+  const g = new THREE.Group();
+  // laminated core with 36 slots
+  const N = 36, pitch = TAU/N, rTip = 1.10, rSlot = 1.30, sh = pitch*0.22;
+  const s = new THREE.Shape(); s.absarc(0, 0, 1.62, 0, TAU, false);
+  const hole = new THREE.Path();
+  for (let k=0;k<N;k++) {
+    const b = k*pitch;
+    const pts = [[rTip,b+sh],[rTip,b+pitch-sh],[rSlot,b+pitch-sh*0.9],[rSlot,b+pitch+sh*0.9]];
+    pts.forEach(([r,a],i) => (k===0&&i===0) ? hole.moveTo(...polar(r,a)) : hole.lineTo(...polar(r,a)));
+  }
+  hole.closePath(); s.holes.push(hole);
+  g.add(extrudeZ(s, Z.statorR, Z.statorF - Z.statorR, M.ironDark(), 96));
+  // lamination stripes on the OD
+  const lam = new THREE.Mesh(new THREE.CylinderGeometry(1.625, 1.625, 0.68, 96, 1, true),
+    new THREE.MeshStandardMaterial({ map:laminationTexture(), metalness:0.6, roughness:0.45 }));
+  lam.rotation.x = Math.PI/2; g.add(lam);
+  // copper end turns: base bundle + overlapping coil loops on both faces
+  [1,-1].forEach(f => {
+    const band = torusZ(1.24, 0.10, M.copper(), 72); band.scale.z = 0.7; band.position.z = f*0.40; g.add(band);
+    for (let k=0;k<18;k++) {
+      const a = k*TAU/18 + (f<0 ? TAU/36 : 0);
+      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.048, 8, 18, Math.PI), M.copperBright());
+      loop.scale.y = 0.62 + (k%2)*0.12;
+      loop.rotation.x = f*Math.PI/2;
+      loop.position.set(0, k%2 ? 1.30 : 1.20, f*0.34);
+      g.add(pivot(a, loop));
+    }
+  });
+  // three stator leads running back to the positive diodes, with eyelets
+  DIODE_POS_ANGLES.forEach(a => {
+    const p0 = polar(1.26, a), p1 = polar(1.22, a+0.03), p2 = polar(1.08, a+0.02), p3 = polar(0.97, a);
+    g.add(tube([[...p0,-0.50],[...p1,-0.60],[...p2,-0.66],[...p3,-0.66]], 0.024, M.copperBright(), 20));
+    g.add(at(torusZ(0.04, 0.014, M.copperBright(), 16), ...p3, -0.66));
+  });
+  return g;
+}
+function buildSlipRings() {
+  const g = new THREE.Group();
+  g.add(ringZ(0.10, 0.19, -0.86, -0.52, M.plasticBlk()));
+  g.add(ringZ(0.18, 0.24, -0.65, -0.55, M.copperBright()));
+  g.add(ringZ(0.18, 0.24, -0.83, -0.73, M.copperBright()));
+  return g;
+}
+function buildNeedleBearing() {
+  const g = new THREE.Group();
+  g.add(lathe([[0.13,-1.14],[0.225,-1.14],[0.225,-1.34],[0.13,-1.34],[0.13,-1.32],[0.205,-1.32],[0.205,-1.16],[0.13,-1.16],[0.13,-1.14]], M.steel(), 36));
+  for (let i=0;i<16;i++) {
+    const a = i*TAU/16;
+    g.add(at(cylZ(0.022, 0.022, 0.15, M.steelDark(), 8), ...polar(0.165, a), -1.24));
+  }
+  return g;
+}
+function buildThruBolts() {
+  const g = new THREE.Group();
+  BOLT_ANGLES.forEach(a => {
+    const [x,y] = polar(BOLT_R, a);
+    g.add(at(cylZ(0.045, 0.045, 1.36, M.zinc(), 12), x, y, 0.0));
+    g.add(at(hexNut(0.085, M.zinc(), 0.06), x, y, -0.635));    // head (rear)
+    g.add(at(torusZ(0.07, 0.018, M.zinc(), 20, TAU-0.4), x, y, 0.62));   // split lock washer
+    g.add(at(hexNut(0.085, M.zinc(), 0.07), x, y, 0.68));      // hex nut (front)
+  });
+  return g;
+}
+
+// ── S.R.E. electrical parts ──
+const DIODE_POS_ANGLES = [195*DEG, 250*DEG, 305*DEG];
+const DIODE_NEG_ANGLES = [60*DEG, 100*DEG, 140*DEG];
+
+function buildRectifier() {
+  const g = new THREE.Group();
+  const a0 = 172*DEG, a1 = 328*DEG, r0 = 0.74, r1 = 1.18;
+  const s = new THREE.Shape(); const n = 40;
+  for (let i=0;i<=n;i++){ const a=a0+(a1-a0)*i/n; i ? s.lineTo(...polar(r1,a)) : s.moveTo(...polar(r1,a)); }
+  for (let i=n;i>=0;i--){ const a=a0+(a1-a0)*i/n; s.lineTo(...polar(r0,a)); }
+  s.closePath();
+  DIODE_POS_ANGLES.forEach(a => { const [x,y]=polar(0.97,a); s.holes.push(circlePath(x,y,0.09)); });
+  g.add(extrudeZ(s, -0.92, 0.05, M.alumLight()));
+  // raised outer lip (heat-sink flange)
+  const lip = new THREE.Mesh(new THREE.CylinderGeometry(r1, r1, 0.10, 48, 1, true, a0, a1-a0), M.alumLight());
+  lip.material.side = THREE.DoubleSide; lip.rotation.x = -Math.PI/2; lip.position.z = -0.87;
+  g.add(lip);
+  // three press-fit positive diodes
+  DIODE_POS_ANGLES.forEach(a => {
+    const [x,y] = polar(0.97, a);
+    g.add(at(cylZ(0.095, 0.095, 0.16, M.diodeBody(), 24), x, y, -0.86));
+    g.add(at(torusZ(0.095, 0.012, M.steel(), 24), x, y, -0.79));
+    g.add(at(cylZ(0.05, 0.07, 0.04, M.diodeBody(), 16), x, y, -0.76));
+    g.add(at(cylZ(0.018, 0.018, 0.14, M.copperBright(), 8), x, y, -0.68));
+  });
+  // insulated mounting screws with insulating washers
+  [a0+9*DEG, a1-9*DEG].forEach(a => {
+    const [x,y] = polar(0.94, a);
+    g.add(at(torusZ(0.07, 0.022, M.insulOrange(), 20), x, y, -0.86));
+    g.add(at(cylZ(0.055, 0.055, 0.04, M.zinc(), 20), x, y, -0.84));
+    g.add(at(torusZ(0.07, 0.02, M.insulOrange(), 20), x, y, -0.935));
+  });
+  return g;
+}
+function buildNegDiodes() {
+  const g = new THREE.Group();
+  DIODE_NEG_ANGLES.forEach(a => {
+    const d = new THREE.Group(), r = 0.98;
+    d.add(at(cylZ(0.09, 0.09, 0.10, M.diodeBody(), 24), 0, r, -0.90));
+    d.add(at(cylZ(0.05, 0.065, 0.04, M.diodeBody(), 16), 0, r, -0.83));
+    // bent strap lead with eyelet (as drawn)
+    d.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.10), M.copperBright()), 0, r, -0.76));
+    d.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.05, 0.02), M.copperBright()), 0.09, r, -0.71));
+    d.add(at(torusZ(0.04, 0.014, M.copperBright(), 16), 0.21, r, -0.71));
+    g.add(pivot(a, d));
+  });
+  return g;
+}
+function buildStud() {
+  const g = new THREE.Group();
+  const [x,y] = polar(1.05, Math.PI);
+  g.add(at(cylZ(0.045, 0.045, 0.56, M.zinc(), 16), x, y, -1.06));
+  g.add(at(hexNut(0.075, M.zinc(), 0.05), x, y, -0.845));                 // stud head on heat sink
+  g.add(at(torusZ(0.07, 0.02, M.insulOrange(), 20), x, y, -0.935));      // inner insulator
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.20, 0.08), M.insulOrange()), x, y, -1.11)); // outer insulator block
+  const flat = ringZ(0.05, 0.10, -1.17, -1.15, M.zinc()); flat.position.x = x; flat.position.y = y; g.add(flat); // flat washer
+  g.add(at(torusZ(0.075, 0.02, M.zinc(), 20, TAU-0.4), x, y, -1.19));   // split lock washer
+  g.add(at(hexNut(0.10, M.zinc(), 0.07), x, y, -1.25));                  // hex nut
+  return g;
+}
+function buildCapacitor() {
+  const d = new THREE.Group(), r = 1.26, z = -0.82;
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.36, 24), M.steel());
+  can.rotation.z = Math.PI/2; d.add(at(can, 0, r, z));
+  const band = torusZ(0.108, 0.022, M.steelDark(), 24); band.rotation.y = Math.PI/2;
+  d.add(at(band, -0.04, r, z));                                          // capacitor retainer
+  d.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.04, 0.12), M.steelDark()), -0.04, r-0.12, z-0.06));
+  d.add(tube([[0.18, r, z],[0.30, r-0.02, z+0.02],[0.40, r-0.10, z+0.03]], 0.014, M.steelDark(), 12));
+  d.add(at(torusZ(0.04, 0.012, M.steelDark(), 16), 0.43, r-0.12, z+0.03));
+  const g = new THREE.Group(); g.add(pivot(150*DEG, d));
+  return g;
+}
+function buildBrushHolder() {
+  const g = new THREE.Group();
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.26, 0.40), M.plasticBlk()), 0, 0.46, -0.70));
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.10, 0.08), M.plasticBlk()), 0, 0.64, -0.62));
+  // two carbon brushes riding on the slip rings
+  [-0.60, -0.78].forEach(z => {
+    g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.07), M.ironDark()), 0, 0.29, z));
+  });
+  // mounting leg + screw
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.03, 0.26), M.zinc()), 0.23, 0.42, -0.82));
+  g.add(at(cylZ(0.035, 0.035, 0.14, M.zinc(), 12), 0.26, 0.42, -0.90));
+  // field terminal strap with eyelet
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.02), M.copperBright()), -0.25, 0.52, -0.52));
+  g.add(at(torusZ(0.04, 0.013, M.copperBright(), 16), -0.38, 0.52, -0.52));
+  return g;
+}
+function buildRegulator() {
+  const g = new THREE.Group(), cx = 0.92, cy = 0.30;
+  // base plate with two mounting ears
+  const s = new THREE.Shape();
+  s.moveTo(-0.46,-0.26); s.lineTo(0.46,-0.26); s.lineTo(0.46,-0.06); s.lineTo(0.58,-0.06);
+  s.lineTo(0.58,0.08); s.lineTo(0.46,0.08); s.lineTo(0.46,0.26); s.lineTo(-0.46,0.26);
+  s.lineTo(-0.46,0.08); s.lineTo(-0.58,0.08); s.lineTo(-0.58,-0.06); s.lineTo(-0.46,-0.06); s.closePath();
+  s.holes.push(circlePath(0.53, 0.01, 0.03)); s.holes.push(circlePath(-0.53, 0.01, 0.03));
+  const base = extrudeZ(s, -1.12, 0.035, M.zinc()); base.position.x = cx; base.position.y = cy; g.add(base);
+  // tapered cover
+  const cover = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.42, 0.26, 4, 1), M.plasticBlk());
+  cover.rotation.x = -Math.PI/2; cover.rotation.y = Math.PI/4;
+  const coverG = new THREE.Group(); coverG.add(cover); coverG.scale.set(1.30, 0.80, 1);
+  coverG.position.set(cx, cy, -1.25); g.add(coverG);
+  // terminal blades
+  for (let i=0;i<3;i++) g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.10, 0.05), M.zinc()), cx-0.14+i*0.14, cy-0.31, -1.15));
+  return g;
+}
+
+// ════════════════════════════════════════════════════════
+//  PART ROSTER — all parts modelled in place; exp = explode offset
+// ════════════════════════════════════════════════════════
+const PARTS = [
+ { id:'hex_nut_f',  name:'Hex Nut',               group:'Front End',     color:'#a9adb3', build:buildHexNutFront,  exp:[0,0, 4.50] },
+ { id:'lock_washer',name:'Split Lock Washer',     group:'Front End',     color:'#9aa0a6', build:buildLockWasher,   exp:[0,0, 4.10] },
+ { id:'pulley',     name:'Pulley',                group:'Front End',     color:'#6b6f74', build:buildPulley,       exp:[0,0, 3.55] },
+ { id:'fan',        name:'Cooling Fan',           group:'Front End',     color:'#a9adb3', build:buildFan,          exp:[0,0, 3.05] },
+ { id:'spacer_f',   name:'Spacer (Front)',        group:'Front End',     color:'#cfd2d6', build:()=>buildSpacer(0.17, 0.92, 1.14), exp:[0,0,2.75] },
+ { id:'de_frame',   name:'D.E. Frame',            group:'Drive End',     color:'#9aa1a8', build:buildDEFrame,      exp:[0,0, 2.25] },
+ { id:'bearing_de', name:'Ball Bearing (D.E.)',   group:'Drive End',     color:'#cfd2d6', build:buildBearing,      exp:[0,0, 1.25] },
+ { id:'retainer',   name:'Bearing Retainer',      group:'Drive End',     color:'#6b6f74', build:buildRetainer,     exp:[0,0, 0.95] },
+ { id:'spacer_de',  name:'Spacer (Inner)',        group:'Drive End',     color:'#cfd2d6', build:()=>buildSpacer(0.16, 0.43, 0.50), exp:[0,0,0.55] },
+ { id:'rotor',      name:'Rotor Assembly',        group:'Core',          color:'#b87333', build:buildRotor,        exp:[0,0, 0.00] },
+ { id:'slip_rings', name:'Slip Rings',            group:'Core',          color:'#d98e45', build:buildSlipRings,    exp:[0,0, 0.00] },
+ { id:'spacer_sre', name:'Spacer (S.R.E.)',       group:'Core',          color:'#cfd2d6', build:()=>buildSpacer(0.15, -1.10, -0.98), exp:[0,0,-0.55] },
+ { id:'stator',     name:'Stator',                group:'Core',          color:'#d98e45', build:buildStator,       exp:[0,0,-2.35] },
+ { id:'thru_bolts', name:'Thru Bolts (×3)',       group:'Slip Ring End', color:'#a9adb3', build:buildThruBolts,    exp:[0,0,-5.10] },
+ { id:'sre_frame',  name:'S.R.E. Frame',          group:'Slip Ring End', color:'#9aa1a8', build:buildSREFrame,     exp:[0,0,-3.40] },
+ { id:'needle_brg', name:'Needle Bearing',        group:'Slip Ring End', color:'#cfd2d6', build:buildNeedleBearing,exp:[0,0,-4.30] },
+ { id:'neg_diodes', name:'Negative Diodes (×3)',  group:'Rectifier',     color:'#303338', build:buildNegDiodes,    exp:[0,0,-4.60] },
+ { id:'rectifier',  name:'Positive Rectifier',    group:'Rectifier',     color:'#b9bec4', build:buildRectifier,    exp:[0,-0.35,-5.30] },
+ { id:'stud',       name:'Output Stud & Insul.',  group:'Rectifier',     color:'#c05a16', build:buildStud,         exp:[0,-0.75,-6.10] },
+ { id:'capacitor',  name:'Capacitor & Retainer',  group:'Electrical',    color:'#cfd2d6', build:buildCapacitor,    exp:[-0.9,0.3,-5.9] },
+ { id:'brush_holder',name:'Brush Holder Assy.',   group:'Electrical',    color:'#202126', build:buildBrushHolder,  exp:[0,1.0,-5.6] },
+ { id:'regulator',  name:'Voltage Regulator',     group:'Electrical',    color:'#202126', build:buildRegulator,    exp:[0.6,-0.4,-6.6] },
+];
+PARTS.forEach(p => { p.asm = [0,0,0]; });
+
+const PART_INFO = {
+  hex_nut_f:  { fn:'Secures the pulley on the threaded rotor-shaft nose. Torqued against the lock washer.', specs:[['Thread','5/8-18 UNF'],['Torque','40–60 ft·lb']] },
+  lock_washer:{ fn:'Split spring washer that prevents the pulley hex nut from backing off under vibration.', specs:[['Type','Helical split'],['Material','Spring steel']] },
+  pulley:     { fn:'Transfers belt torque from the engine to the rotor shaft, driving it at 2–3× engine speed.', specs:[['Type','Single V-groove'],['Material','Stamped/cast steel']] },
+  fan:        { fn:'Stamped steel fan: a star-shaped disc whose blades are bent 90° toward the frame. It pulls cooling air through the housing to cool the stator windings and diodes.', specs:[['Blades','10, stamped & bent'],['Airflow','Rear-to-front, through frame windows']] },
+  spacer_f:   { fn:'Sets the axial position of the fan against the D.E. frame bearing journal.', specs:[['Material','Steel']] },
+  de_frame:   { fn:'Drive-End housing: supports the front ball bearing, aligns the rotor, and provides the engine mounting ears.', specs:[['Material','Die-cast aluminum'],['Bearing seat','Press-fit bore']] },
+  bearing_de: { fn:'Sealed ball bearing carrying the radial belt load and axial loads at the drive end of the shaft.', specs:[['Type','Sealed ball'],['Lubrication','Grease-packed, lifetime']] },
+  retainer:   { fn:'Steel plate that clamps the front bearing in the D.E. frame bore. Three screws.', specs:[['Screws','3'],['Function','Axial retention']] },
+  spacer_de:  { fn:'Inner spacer setting rotor axial position between the bearing inner race and the rotor pole face.', specs:[['Material','Steel']] },
+  rotor:      { fn:'Rotating claw-pole field. The field coil (energized through slip rings) magnetizes interleaved claw fingers, creating 12 alternating poles that sweep the stator.', specs:[['Poles','12 (6 N + 6 S)'],['Field resistance','≈ 4 Ω'],['Field current','≈ 2–3 A']] },
+  stator:     { fn:'Stationary 3-phase Y-connected armature. The rotating rotor field induces 3-phase AC here; the three leads feed the rectifier bridge.', specs:[['Winding','3-phase, Y'],['Output','37–61 A (10DN family)'],['Core','Laminated steel']] },
+  slip_rings: { fn:'Two copper rings on the rear shaft delivering field current from the stationary brushes to the rotating field coil.', specs:[['Material','Copper'],['Min. dia.','Inspect for grooving']] },
+  spacer_sre: { fn:'Rear shaft spacer setting clearance between the rotor pole face and S.R.E. frame.', specs:[['Material','Steel']] },
+  sre_frame:  { fn:'Slip-Ring-End housing: carries the needle bearing, brush holder, rectifier diodes, terminal stud, and regulator.', specs:[['Material','Die-cast aluminum'],['Ground path','Negative diodes seat here']] },
+  needle_brg: { fn:'Needle roller bearing supporting the rear shaft journal in minimal radial space.', specs:[['Type','Caged needle roller'],['Load','Radial only']] },
+  thru_bolts: { fn:'Three long bolts clamping D.E. frame + stator + S.R.E. frame into one rigid assembly.', specs:[['Count','3'],['Note','Mark frame alignment before removal']] },
+  rectifier:  { fn:'Insulated heat-sink plate carrying the three positive press-fit diodes; connects to the B+ output stud.', specs:[['Diodes','3 positive'],['Isolation','Insulating washers from frame']] },
+  neg_diodes: { fn:'Three negative diodes pressed directly into the grounded S.R.E. frame, completing the 3-phase full-wave bridge.', specs:[['Diodes','3 negative'],['Ground','Frame (case)']] },
+  stud:       { fn:'B+ output terminal stud, insulated from the frame by phenolic washers; carries full alternator output current.', specs:[['Terminal','BAT (B+)'],['Insulators','2 phenolic']] },
+  capacitor:  { fn:'Suppression capacitor across the output that absorbs voltage transients and reduces radio interference.', specs:[['Value','≈ 0.5 µF'],['Protects','Diodes / radio']] },
+  brush_holder:{ fn:'Spring-loaded carbon brushes riding on the slip rings to feed field current to the rotor. A pin hole allows retracting brushes during assembly.', specs:[['Brushes','2 carbon'],['Tip','Insert pin to hold brushes for reassembly']] },
+  regulator:  { fn:'Voltage regulator senses system voltage and switches field current to hold the bus at ≈ 14.2 V. (External on early 10DN; integral on 10SI successor.)', specs:[['Set point','13.8–14.5 V'],['Controls','Rotor field current']] },
+};
+
+const STEPS = [
+ { ids:['hex_nut_f'],   desc:'Hold the pulley and remove the shaft hex nut (5/8-18). Impact wrench or strap wrench on pulley.' },
+ { ids:['lock_washer'], desc:'Slide the split lock washer off the shaft nose.' },
+ { ids:['pulley'],      desc:'Pull the V-groove pulley from the shaft. Use a puller if seized — never hammer the shaft.' },
+ { ids:['fan'],         desc:'Slide the stamped cooling fan off. Note its orientation (concave side rearward).' },
+ { ids:['spacer_f'],    desc:'Remove the front spacer collar.' },
+ { ids:['thru_bolts'],  desc:'Scribe a mark across both frames and the stator for re-alignment, then remove the three thru-bolts.' },
+ { ids:['de_frame'],    desc:'Separate the D.E. frame from the stator. Pry gently at the stator slots — do not pry on the windings.' },
+ { ids:['retainer'],    desc:'Remove the three retainer screws and lift off the bearing retainer plate.' },
+ { ids:['bearing_de'],  desc:'Press the ball bearing out of the D.E. frame bore (support the frame, press on the outer race).' },
+ { ids:['spacer_de','spacer_sre'], desc:'Remove the inner and rear shaft spacers, noting their positions.' },
+ { ids:['stator'],      desc:'Lift the stator away from the S.R.E. frame. Tag the three stator leads before disconnecting from diodes.' },
+ { ids:['slip_rings'],  desc:'The slip-ring assembly presses off the rear shaft (replacement only — destructive on some units).' },
+ { ids:['sre_frame'],   desc:'The S.R.E. frame is now exposed. Inspect bearing bore, brush tracks, and diode seats.' },
+ { ids:['needle_brg'],  desc:'Press the needle bearing out of the rear bore from the inside.' },
+ { ids:['neg_diodes'],  desc:'Press the three negative diodes out of the frame with a diode press adapter — never strike them.' },
+ { ids:['rectifier'],   desc:'Remove the insulated positive heat-sink plate with its three positive diodes and insulating washers.' },
+ { ids:['stud'],        desc:'Remove the B+ output stud, hex nut, lock washer, and both phenolic insulators.' },
+ { ids:['capacitor'],   desc:'Unscrew the capacitor retainer and remove the suppression capacitor.' },
+ { ids:['brush_holder'],desc:'Remove the brush holder. Measure brush length — replace below spec. Tip: pin the brushes for reassembly.' },
+ { ids:['regulator'],   desc:'Remove the voltage regulator. Bench-test set point before reuse. Reassembly is the reverse order.' },
+];
+
+// ════════════════════════════════════════════════════════
+//  SCENE
+// ════════════════════════════════════════════════════════
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d1117);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 300);
+
+// lighting — soft studio
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a1410, 0.85));
+const key = new THREE.DirectionalLight(0xfff2dd, 1.25); key.position.set(6,9,7);  scene.add(key);
+const fill = new THREE.DirectionalLight(0x9db4ff, 0.45); fill.position.set(-7,2,-5); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xf0a500, 0.35);  rim.position.set(0,-4,-8); scene.add(rim);
+
+const grid = new THREE.GridHelper(40, 40, 0x232838, 0x181c28);
+grid.position.y = -2.6;
+scene.add(grid);
+
+// axis dash line (assembly centreline) — subtle
+const lineMat = new THREE.LineDashedMaterial({ color:0x3a4258, dashSize:0.25, gapSize:0.18 });
+const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,8), new THREE.Vector3(0,0,-9)]);
+const centerline = new THREE.Line(lineGeo, lineMat);
+centerline.computeLineDistances();
+scene.add(centerline);
+
+// ════════════════════════════════════════════════════════
+//  BUILD PARTS
+// ════════════════════════════════════════════════════════
+const partMeshes = {}, partObjects = {};
+PARTS.forEach(p => {
+  const mesh = p.build();
+  mesh.position.set(...p.asm);
+  mesh.traverse(c => { if (c.isMesh) c.userData.partId = p.id; });
+  mesh.userData.partId = p.id;
+  partMeshes[p.id] = mesh;
+  partObjects[p.id] = p;
+  scene.add(mesh);
+});
+
+// ════════════════════════════════════════════════════════
+//  EXPLODE — lerp between asm and exp by factor
+// ════════════════════════════════════════════════════════
+let explodeFactor = 0, targetExplode = 0, animatingExplode = false;
+const slider = document.getElementById('explodeSlider');
+
+function setPartsTo(t) {
+  PARTS.forEach(p => {
+    const m = partMeshes[p.id];
+    if (m.userData.stepLocked) return;     // step mode controls these
+    m.position.set(
+      p.asm[0] + (p.exp[0]-p.asm[0])*t,
+      p.asm[1] + (p.exp[1]-p.asm[1])*t,
+      p.asm[2] + (p.exp[2]-p.asm[2])*t
+    );
+  });
+}
+slider.addEventListener('input', () => {
+  if (stepMode) exitStepMode();
+  explodeFactor = targetExplode = slider.value/100;
+  animatingExplode = false;
+  setPartsTo(explodeFactor);
+});
+
+// ════════════════════════════════════════════════════════
+//  HIGHLIGHT
+// ════════════════════════════════════════════════════════
+let selectedId = null;
+const savedMats = new Map();
+function highlightPart(id) {
+  if (selectedId && selectedId !== id) dehighlightPart(selectedId);
+  selectedId = id;
+  const mesh = partMeshes[id];
+  mesh.traverse(c => {
+    if (c.isMesh) {
+      if (!savedMats.has(c.uuid)) savedMats.set(c.uuid, c.material);
+      c.material = c.material.clone();
+      c.material.emissive = new THREE.Color(0xf0a500);
+      c.material.emissiveIntensity = 0.45;
+    }
+  });
+}
+function dehighlightPart(id) {
+  partMeshes[id].traverse(c => {
+    if (c.isMesh && savedMats.has(c.uuid)) { c.material = savedMats.get(c.uuid); savedMats.delete(c.uuid); }
+  });
+}
+function dehighlightAll(){ if (selectedId) dehighlightPart(selectedId); selectedId = null; }
+
+// ════════════════════════════════════════════════════════
+//  ORBIT (custom)
+// ════════════════════════════════════════════════════════
+let sph = { theta: 0.85, phi: 1.15, radius: 13 };
+let panOffset = new THREE.Vector3(0, 0, 0);
+let autoRotate = false;
+let isDown=false, isRight=false, lastX=0, lastY=0;
+
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+canvas.addEventListener('pointerdown', e=>{
+  canvas.setPointerCapture(e.pointerId);
+  if (e.button===2) isRight=true; else isDown=true;
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener('pointermove', e=>{
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  if (isDown){ sph.theta-=dx*0.008; sph.phi=Math.max(0.12,Math.min(Math.PI-0.12,sph.phi+dy*0.008)); }
+  if (isRight){ panOffset.x-=dx*0.01; panOffset.y+=dy*0.01; }
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener('pointerup', ()=>{ isDown=false; isRight=false; });
+canvas.addEventListener('wheel', e=>{ sph.radius=Math.max(4,Math.min(35,sph.radius+e.deltaY*0.02)); },{passive:true});
+
+function updateCamera(){
+  camera.position.set(
+    sph.radius*Math.sin(sph.phi)*Math.sin(sph.theta)+panOffset.x,
+    sph.radius*Math.cos(sph.phi)+panOffset.y,
+    sph.radius*Math.sin(sph.phi)*Math.cos(sph.theta)
+  );
+  camera.lookAt(panOffset.x, panOffset.y, 0);
+}
+
+// ════════════════════════════════════════════════════════
+//  PICKING
+// ════════════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let downTime = 0;
+const tooltip = document.getElementById('tooltip');
+const pickables = [];
+scene.traverse(c=>{ if (c.isMesh && c.userData.partId) pickables.push(c); });
+
+canvas.addEventListener('pointerdown', ()=>{ downTime = Date.now(); });
+canvas.addEventListener('pointerup', e=>{
+  if (Date.now()-downTime > 230) return;
+  const r = canvas.getBoundingClientRect();
+  mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits = raycaster.intersectObjects(pickables);
+  if (hits.length){ const pid=hits[0].object.userData.partId; if (pid) selectPart(pid); }
+  else { dehighlightAll(); showNoSelection(); }
+});
+canvas.addEventListener('pointermove', e=>{
+  const r = canvas.getBoundingClientRect();
+  mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits = raycaster.intersectObjects(pickables);
+  if (hits.length && hits[0].object.userData.partId){
+    const p = partObjects[hits[0].object.userData.partId];
+    tooltip.style.display='block';
+    tooltip.style.left=(e.clientX+14)+'px';
+    tooltip.style.top=(e.clientY-10)+'px';
+    tooltip.textContent = p.name;
+    canvas.style.cursor='pointer';
+  } else { tooltip.style.display='none'; canvas.style.cursor='default'; }
+});
+
+// ════════════════════════════════════════════════════════
+//  UI
+// ════════════════════════════════════════════════════════
+function buildPartsList(){
+  const list=document.getElementById('partsList');
+  const groups={};
+  PARTS.forEach(p=>{ (groups[p.group]=groups[p.group]||[]).push(p); });
+  Object.entries(groups).forEach(([g,parts])=>{
+    const label=document.createElement('div');
+    label.className='part-group-label'; label.textContent=g;
+    list.appendChild(label);
+    parts.forEach(p=>{
+      const item=document.createElement('div');
+      item.className='part-item'; item.id='pi_'+p.id;
+      item.innerHTML=`<div class="part-dot" style="background:${p.color}"></div>
+        <div class="part-name">${p.name}</div>
+        <div class="part-vis" title="Toggle visibility">👁</div>`;
+      item.addEventListener('click', e=>{
+        if (e.target.classList.contains('part-vis')) return;
+        selectPart(p.id);
+      });
+      item.querySelector('.part-vis').addEventListener('click', ()=>{
+        const m=partMeshes[p.id]; m.visible=!m.visible;
+        item.classList.toggle('hidden-part', !m.visible);
+      });
+      list.appendChild(item);
+    });
+  });
+}
+function selectPart(id){
+  highlightPart(id);
+  document.querySelectorAll('.part-item').forEach(el=>el.classList.remove('active'));
+  const li=document.getElementById('pi_'+id);
+  if (li){ li.classList.add('active'); li.scrollIntoView({block:'nearest'}); }
+  showPartDetail(id);
+}
+function showPartDetail(id){
+  const p=partObjects[id], info=PART_INFO[id]||{};
+  document.getElementById('partDetail').innerHTML=`
+    <h2>${p.name}</h2>
+    <div class="part-id">${id.toUpperCase()} · ${p.group}</div>
+    ${info.fn?`<div class="detail-section"><div class="detail-label">Function</div>
+      <div class="detail-text">${info.fn}</div></div>`:''}
+    ${info.specs?`<div class="detail-section"><div class="detail-label">Specs / Notes</div>
+      <table class="spec-table">${info.specs.map(s=>`<tr><td>${s[0]}</td><td>${s[1]}</td></tr>`).join('')}</table></div>`:''}`;
+}
+function showNoSelection(){
+  document.getElementById('partDetail').innerHTML=`
+    <div class="no-selection"><div class="icon">⚙</div>
+    Click any component in the 3D view or parts list for details.</div>`;
+  document.querySelectorAll('.part-item').forEach(el=>el.classList.remove('active'));
+}
+
+// ════════════════════════════════════════════════════════
+//  STEP MODE
+// ════════════════════════════════════════════════════════
+let stepMode=false, currentStep=-1;
+function buildStepDots(){
+  const dots=document.getElementById('stepDots'); dots.innerHTML='';
+  STEPS.forEach((s,i)=>{
+    const d=document.createElement('div'); d.className='step-dot'; d.textContent=i+1;
+    d.addEventListener('click',()=>goToStep(i));
+    dots.appendChild(d);
+  });
+}
+function enterStepMode(){
+  stepMode=true; currentStep=-1;
+  slider.value=0; explodeFactor=targetExplode=0; animatingExplode=false;
+  PARTS.forEach(p=>{ const m=partMeshes[p.id]; m.visible=true; m.userData.stepLocked=false; m.position.set(...p.asm); });
+  document.getElementById('stepPanel').style.display='flex';
+  document.getElementById('stepHint').style.display='block';
+  document.getElementById('btnStepMode').classList.add('active-btn');
+  buildStepDots(); updateStepDots();
+  document.getElementById('stepDesc').textContent='Press Next to begin disassembly.';
+}
+function exitStepMode(){
+  stepMode=false;
+  document.getElementById('stepPanel').style.display='none';
+  document.getElementById('stepHint').style.display='none';
+  document.getElementById('btnStepMode').classList.remove('active-btn');
+  PARTS.forEach(p=>{ const m=partMeshes[p.id]; m.userData.stepLocked=false; m.position.set(...p.asm); });
+}
+function doStep(n,dir){
+  const step=STEPS[n]; if (!step) return;
+  step.ids.forEach(id=>{
+    const m=partMeshes[id], p=partObjects[id];
+    if (dir==='forward'){
+      m.position.set(...p.exp);
+      m.userData.stepLocked=true;
+      highlightPart(id); showPartDetail(id);
+      document.querySelectorAll('.part-item').forEach(el=>el.classList.remove('active'));
+      const li=document.getElementById('pi_'+id); if (li) li.classList.add('active');
+    } else {
+      m.position.set(...p.asm);
+      m.userData.stepLocked=false;
+    }
+  });
+  document.getElementById('stepDesc').textContent=`Step ${n+1}: ${step.desc}`;
+}
+function goToStep(n){
+  if (n>currentStep){ for(let i=currentStep+1;i<=n;i++) doStep(i,'forward'); }
+  else { for(let i=currentStep;i>n;i--) doStep(i,'backward'); }
+  currentStep=n; updateStepDots();
+}
+function updateStepDots(){
+  document.querySelectorAll('.step-dot').forEach((d,i)=>{
+    d.classList.remove('done','current');
+    if (i<currentStep) d.classList.add('done');
+    else if (i===currentStep) d.classList.add('current');
+  });
+}
+document.getElementById('btnNextStep').addEventListener('click',()=>{
+  if (stepMode && currentStep<STEPS.length-1){ doStep(++currentStep,'forward'); updateStepDots(); }
+});
+document.getElementById('btnPrevStep').addEventListener('click',()=>{
+  if (stepMode && currentStep>=0){
+    doStep(currentStep,'backward'); currentStep--; updateStepDots();
+    document.getElementById('stepDesc').textContent = currentStep>=0
+      ? `Step ${currentStep+1}: ${STEPS[currentStep].desc}` : 'Press Next to begin disassembly.';
+  }
+});
+document.getElementById('btnExitStep').addEventListener('click', exitStepMode);
+document.addEventListener('keydown', e=>{
+  if (!stepMode) return;
+  if (e.key==='ArrowRight') document.getElementById('btnNextStep').click();
+  if (e.key==='ArrowLeft')  document.getElementById('btnPrevStep').click();
+});
+
+// ════════════════════════════════════════════════════════
+//  HEADER BUTTONS
+// ════════════════════════════════════════════════════════
+document.getElementById('btnExplode').addEventListener('click',()=>{
+  if (stepMode) exitStepMode();
+  targetExplode=1; animatingExplode=true;
+});
+document.getElementById('btnAssemble').addEventListener('click',()=>{
+  if (stepMode) exitStepMode();
+  targetExplode=0; animatingExplode=true;
+});
+document.getElementById('btnStepMode').addEventListener('click',()=>{ stepMode?exitStepMode():enterStepMode(); });
+document.getElementById('btnAutoRotate').addEventListener('click',e=>{
+  autoRotate=!autoRotate; e.currentTarget.classList.toggle('active-btn',autoRotate);
+});
+document.getElementById('btnReset').addEventListener('click',()=>{
+  sph={theta:0.85,phi:1.15,radius:13}; panOffset.set(0,0,0);
+  if (stepMode) exitStepMode();
+  targetExplode=0; animatingExplode=true;
+  dehighlightAll(); showNoSelection();
+});
+
+// ════════════════════════════════════════════════════════
+//  RESIZE + LOOP
+// ════════════════════════════════════════════════════════
+function resize(){
+  const w=canvas.clientWidth, h=canvas.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas); resize();
+
+let lastT=0;
+function animate(t){
+  requestAnimationFrame(animate);
+  const dt=Math.min((t-lastT)/1000,0.05); lastT=t;
+  if (autoRotate) sph.theta+=dt*0.35;
+  if (animatingExplode && !stepMode){
+    explodeFactor += (targetExplode-explodeFactor)*0.08;
+    if (Math.abs(explodeFactor-targetExplode)<0.002){ explodeFactor=targetExplode; animatingExplode=false; }
+    setPartsTo(explodeFactor);
+    slider.value = Math.round(explodeFactor*100);
+  }
+  updateCamera();
+  renderer.render(scene,camera);
+}
+animate(0);
+
+buildPartsList();
+setTimeout(()=>{
+  const L=document.getElementById('loading');
+  L.style.opacity='0'; L.style.transition='opacity .4s';
+  setTimeout(()=>L.style.display='none',400);
+},1200);
+</script>
+</body>
+</html>
